@@ -1,7 +1,7 @@
 
 import mysql from 'mysql2/promise';
 
-// Create a connection pool
+// Tạo connection pool
 const pool = mysql.createPool({
   host: '127.0.0.1',
   port: 3308,
@@ -13,7 +13,7 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Helper function for executing queries
+// Hàm hỗ trợ thực thi truy vấn
 export async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
   try {
     const [rows] = await pool.execute(query, params);
@@ -24,7 +24,7 @@ export async function executeQuery<T>(query: string, params: any[] = []): Promis
   }
 }
 
-// User related queries
+// Các truy vấn liên quan đến người dùng
 export async function getUserByUsername(username: string) {
   return executeQuery<any[]>(
     'SELECT id, username, password_hash as passwordHash, role, created_at as createdAt FROM users WHERE username = ?',
@@ -32,7 +32,7 @@ export async function getUserByUsername(username: string) {
   ).then(rows => rows[0] || null);
 }
 
-// Device related queries
+// Các truy vấn liên quan đến thiết bị
 export async function getAllDevices() {
   return executeQuery<any[]>(
     `SELECT d.*, u.username as addedByUsername
@@ -78,7 +78,7 @@ export async function deleteDevice(deviceId: number) {
   return executeQuery('DELETE FROM devices WHERE id = ?', [deviceId]);
 }
 
-// Log related queries
+// Các truy vấn liên quan đến nhật ký
 export async function addLog(log: {
   mac?: string;
   hostname?: string;
@@ -102,5 +102,5 @@ export async function getLogs(limit = 50) {
   );
 }
 
-// Export the pool to be used directly if needed
+// Xuất pool để sử dụng trực tiếp nếu cần
 export default pool;
