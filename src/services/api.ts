@@ -89,6 +89,13 @@ export const api = {
   deleteDevice: (deviceId: string) => {
     return apiRequest(`/devices/${deviceId}`, 'DELETE');
   },
+  // New endpoint for client activation
+  activateClient: (macAddress: string, hostname: string, key: string) => {
+    return apiRequest<{ success: boolean; message: string }>('/client/activate', 'POST', { macAddress, hostname, key });
+  },
+  checkClientActivation: (macAddress: string, hostname: string) => {
+    return apiRequest<{ active: boolean; message: string }>('/client/check', 'POST', { macAddress, hostname });
+  },
 
   // Log related endpoints
   getLogs: () => {

@@ -14,6 +14,7 @@ import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/layout/DashboardLayout";
+import ClientActivation from "./pages/ClientActivation";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/activate" element={<ClientActivation />} />
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/devices" element={<Devices />} />
