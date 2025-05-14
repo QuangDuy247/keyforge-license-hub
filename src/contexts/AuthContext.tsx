@@ -1,23 +1,34 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User } from '@/types';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, UserRole } from '@/types';
-import { useToast } from "@/hooks/use-toast";
+// Updated to use our API service
+import { api } from '@/services/api';
+import { toast } from '@/components/ui/use-toast';
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+}
+
+const initialState: AuthState = {
+  user: null,
+  token: localStorage.getItem('token'),
+};
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  token: string | null;
+  login: (username: string, password: string) => Promise<{ success: boolean }>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
 }
 
-const initialUser: User | null = null;
-
 const AuthContext = createContext<AuthContextType>({
-  user: initialUser,
-  loading: true,
-  login: async () => {},
+  user: null,
+  token: null,
+  login: async () => ({ success: false }),
   logout: () => {},
   isAuthenticated: false,
   isAdmin: false,
@@ -25,83 +36,68 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  // Check for saved auth on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('user');
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  // Mock users for demonstration - In production, this would be from API
-  const mockUsers = [
-    { id: '1', username: 'admin', password: 'admin123', role: 'admin' as UserRole },
-    { id: '2', username: 'staff', password: 'staff123', role: 'staff' as UserRole },
-  ];
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<AuthState>(initialState);
+  const navigate = useNavigate();
 
   const login = async (username: string, password: string) => {
-    setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const foundUser = mockUsers.find(
-      u => u.username === username && u.password === password
-    );
-    
-    if (foundUser) {
-      const { password, ...userWithoutPassword } = foundUser;
-      const authenticatedUser = {
-        ...userWithoutPassword,
-        lastLogin: new Date().toISOString(),
-      };
+    try {
+      const { user, token } = await api.login(username, password);
       
-      localStorage.setItem('user', JSON.stringify(authenticatedUser));
-      setUser(authenticatedUser);
+      setState({ user, token });
+      localStorage.setItem('token', token);
       
+      // Log the login action
+      if (user) {
+        api.addLogEntry({
+          action: 'login',
+          userId: user.id,
+          username: user.username,
+        });
+      }
+      
+      return { success: true };
+    } catch (error) {
       toast({
-        title: "Login successful",
-        description: `Welcome back, ${username}!`,
-      });
-    } else {
-      toast({
+        variant: "destructive",
         title: "Login failed",
         description: "Invalid username or password",
-        variant: "destructive",
       });
-      throw new Error('Invalid credentials');
+      throw error;
     }
-    
-    setLoading(false);
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+    setState({ user: null, token: null });
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
+  useEffect(() => {
+    // Mock: Restore user from token if needed
+    if (state.token && !state.user) {
+      // In a real app, this would verify the token with the server
+      // For demo, we'll just assume the admin user
+      setState({
+        ...state,
+        user: {
+          id: 'user-1',
+          username: 'admin',
+          role: 'admin',
+          lastLogin: new Date().toISOString()
+        }
+      });
+    }
+  }, [state.token]);
+
   const value = {
-    user,
-    loading,
+    user: state.user,
+    token: state.token,
     login,
     logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAuthenticated: !!state.user,
+    isAdmin: state.user?.role === 'admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}

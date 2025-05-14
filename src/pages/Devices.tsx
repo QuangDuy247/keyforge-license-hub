@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { Device, DeviceStatus, KeyDuration } from '@/types';
-import { mockData } from '@/utils/mockData';
+import { api } from '@/services/api';
 
 import {
   Card,
@@ -108,12 +107,10 @@ const Devices = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Simulate API request
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const deviceData = await mockData.getDevices();
+        setLoading(true);
+        const deviceData = await api.getDevices();
         setDevices(deviceData);
         setFilteredDevices(deviceData);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching devices:', error);
         toast({
@@ -121,6 +118,7 @@ const Devices = () => {
           description: "Failed to load devices.",
           variant: "destructive",
         });
+      } finally {
         setLoading(false);
       }
     };
@@ -149,124 +147,119 @@ const Devices = () => {
     setFilteredDevices(result);
   }, [searchQuery, currentStatus, devices]);
 
-  const handleIssueKey = (values: IssueKeyFormValues) => {
-    // Generate a random key for demonstration
-    const randomKey = Array.from({ length: 5 }, () => 
-      Math.random().toString(36).substring(2, 10)
-    ).join('-').toUpperCase();
+  const handleIssueKey = async (values: IssueKeyFormValues) => {
+    try {
+      const { device } = await api.addDevice({
+        macAddress: values.macAddress,
+        hostname: values.hostname,
+        duration: values.duration,
+      });
 
-    // Calculate expiry date based on duration
-    let expiryDate: string | undefined;
-    const now = new Date();
-    
-    switch (values.duration) {
-      case '1day':
-        expiryDate = new Date(now.setDate(now.getDate() + 1)).toISOString();
-        break;
-      case '3days':
-        expiryDate = new Date(now.setDate(now.getDate() + 3)).toISOString();
-        break;
-      case '1month':
-        expiryDate = new Date(now.setMonth(now.getMonth() + 1)).toISOString();
-        break;
-      case '6months':
-        expiryDate = new Date(now.setMonth(now.getMonth() + 6)).toISOString();
-        break;
-      case '2years':
-        expiryDate = new Date(now.setFullYear(now.getFullYear() + 2)).toISOString();
-        break;
-      case 'forever':
-        expiryDate = undefined;
-        break;
+      // Update state
+      setDevices(prevDevices => [...prevDevices, device]);
+      
+      // Close dialog and reset form
+      setIsIssueKeyDialogOpen(false);
+      form.reset();
+      
+      // Show success toast
+      toast({
+        title: "Key Issued",
+        description: `License key has been issued for ${values.hostname}`,
+      });
+
+      // Log the action
+      api.addLogEntry({
+        action: 'issue_key',
+        deviceDetails: `${values.hostname} (${values.macAddress})`,
+        deviceId: device.id
+      });
+    } catch (error) {
+      console.error('Error issuing key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to issue key.",
+        variant: "destructive",
+      });
     }
-
-    // Create a new device
-    const newDevice: Device = {
-      id: Math.random().toString(36).substring(2, 15),
-      macAddress: values.macAddress,
-      hostname: values.hostname,
-      status: 'pending',
-      key: randomKey,
-      expiryDate: expiryDate,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Update state
-    setDevices(prevDevices => [...prevDevices, newDevice]);
-    
-    // Close dialog and reset form
-    setIsIssueKeyDialogOpen(false);
-    form.reset();
-    
-    // Show success toast
-    toast({
-      title: "Key Issued",
-      description: `License key has been issued for ${values.hostname}`,
-    });
-
-    // Log the action
-    mockData.addLogEntry({
-      action: 'issue_key',
-      deviceDetails: `${values.hostname} (${values.macAddress})`,
-      deviceId: newDevice.id
-    });
   };
 
-  const handleDeleteDevice = () => {
+  const handleDeleteDevice = async () => {
     if (!deviceToDelete) return;
     
-    // Update state
-    setDevices(prevDevices => 
-      prevDevices.filter(device => device.id !== deviceToDelete.id)
-    );
-    
-    // Close dialog
-    setIsConfirmDialogOpen(false);
-    setDeviceToDelete(null);
-    
-    // Show success toast
-    toast({
-      title: "Device Deleted",
-      description: `${deviceToDelete.hostname} has been deleted successfully.`,
-    });
+    try {
+      await api.deleteDevice(deviceToDelete.id);
+      
+      // Update state
+      setDevices(prevDevices => 
+        prevDevices.filter(device => device.id !== deviceToDelete.id)
+      );
+      
+      // Close dialog
+      setIsConfirmDialogOpen(false);
+      setDeviceToDelete(null);
+      
+      // Show success toast
+      toast({
+        title: "Device Deleted",
+        description: `${deviceToDelete.hostname} has been deleted successfully.`,
+      });
 
-    // Log the action
-    mockData.addLogEntry({
-      action: 'delete',
-      deviceDetails: `${deviceToDelete.hostname} (${deviceToDelete.macAddress})`,
-      deviceId: deviceToDelete.id
-    });
+      // Log the action
+      api.addLogEntry({
+        action: 'delete',
+        deviceDetails: `${deviceToDelete.hostname} (${deviceToDelete.macAddress})`,
+        deviceId: deviceToDelete.id
+      });
+    } catch (error) {
+      console.error('Error deleting device:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete device.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleResetDevice = () => {
+  const handleResetDevice = async () => {
     if (!deviceToReset) return;
     
-    // Update device status
-    setDevices(prevDevices => 
-      prevDevices.map(device => 
-        device.id === deviceToReset.id 
-          ? { ...device, status: 'pending', updatedAt: new Date().toISOString() } 
-          : device
-      )
-    );
-    
-    // Close dialog
-    setIsResetDialogOpen(false);
-    setDeviceToReset(null);
-    
-    // Show success toast
-    toast({
-      title: "Device Reset",
-      description: `${deviceToReset.hostname} has been reset to pending status.`,
-    });
+    try {
+      await api.resetDevice(deviceToReset.id);
+      
+      // Update device status
+      setDevices(prevDevices => 
+        prevDevices.map(device => 
+          device.id === deviceToReset.id 
+            ? { ...device, status: 'pending' as DeviceStatus, updatedAt: new Date().toISOString() } 
+            : device
+        )
+      );
+      
+      // Close dialog
+      setIsResetDialogOpen(false);
+      setDeviceToReset(null);
+      
+      // Show success toast
+      toast({
+        title: "Device Reset",
+        description: `${deviceToReset.hostname} has been reset to pending status.`,
+      });
 
-    // Log the action
-    mockData.addLogEntry({
-      action: 'reset',
-      deviceDetails: `${deviceToReset.hostname} (${deviceToReset.macAddress})`,
-      deviceId: deviceToReset.id
-    });
+      // Log the action
+      api.addLogEntry({
+        action: 'reset',
+        deviceDetails: `${deviceToReset.hostname} (${deviceToReset.macAddress})`,
+        deviceId: deviceToReset.id
+      });
+    } catch (error) {
+      console.error('Error resetting device:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset device.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {

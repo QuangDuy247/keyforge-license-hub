@@ -54,6 +54,7 @@ const Login: React.FC = () => {
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
+    } finally {
       setIsLoading(false);
     }
   };
