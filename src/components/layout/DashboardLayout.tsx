@@ -167,7 +167,7 @@ const DashboardLayout = () => {
         
         <div className="flex-1 flex flex-col">
           <div className="flex items-center p-4 border-b">
-            <SidebarTrigger asChild>
+            <SidebarTrigger>
               <Button variant="outline" size="icon">
                 <ChevronLeft className="sidebar-open:hidden" />
                 <ChevronRight className="hidden sidebar-open:block" />
