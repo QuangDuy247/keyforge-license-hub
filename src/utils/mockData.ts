@@ -1,12 +1,11 @@
 
-// File này sẽ được sử dụng trong quá trình chuyển đổi để loại bỏ dữ liệu mẫu
-// Chúng ta sẽ thay thế nó bằng các lệnh gọi API thực tế
+// File này không còn sử dụng mẫu dữ liệu giả mà kết nối trực tiếp với cơ sở dữ liệu
 
 import { DashboardStats } from '@/types';
 import * as db from '@/services/database';
 
 export class MockData {
-  // Hàm này sẽ lấy dữ liệu thống kê thực tế từ cơ sở dữ liệu
+  // Hàm này sẽ lấy dữ liệu thống kê từ cơ sở dữ liệu
   async getDashboardStats(): Promise<DashboardStats> {
     try {
       // Lấy tất cả thiết bị và phân loại chúng
@@ -104,8 +103,22 @@ export class MockData {
         action: logData.action,
         performedBy: parseInt(logData.userId) || 1,
       });
+      return true;
     } catch (error) {
       console.error('Error adding log entry:', error);
+      return false;
+    }
+  }
+  
+  // Add this method for Users page
+  async getUsers() {
+    try {
+      // For now, return empty array since we don't have a users table query yet
+      // In a real application, this would call db.getAllUsers()
+      return [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
     }
   }
 }

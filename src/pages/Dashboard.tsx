@@ -11,11 +11,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call
+    // Get data from the database
     const fetchData = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setStats(mockData.getDashboardStats());
+        const dashboardStats = await mockData.getDashboardStats();
+        setStats(dashboardStats);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

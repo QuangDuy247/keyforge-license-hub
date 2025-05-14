@@ -118,9 +118,9 @@ const Users = () => {
       try {
         // Simulate API request
         await new Promise(resolve => setTimeout(resolve, 800));
-        const data = mockData.getUsers();
-        setUsers(data);
-        setFilteredUsers(data);
+        const userData = await mockData.getUsers();
+        setUsers(userData);
+        setFilteredUsers(userData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching users:', error);

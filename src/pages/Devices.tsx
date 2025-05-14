@@ -110,9 +110,9 @@ const Devices = () => {
       try {
         // Simulate API request
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const data = mockData.getDevices();
-        setDevices(data);
-        setFilteredDevices(data);
+        const deviceData = await mockData.getDevices();
+        setDevices(deviceData);
+        setFilteredDevices(deviceData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching devices:', error);

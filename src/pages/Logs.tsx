@@ -45,9 +45,9 @@ const Logs = () => {
       try {
         // Simulate API request
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const data = mockData.getLogs();
-        setLogs(data);
-        setFilteredLogs(data);
+        const logData = await mockData.getLogs();
+        setLogs(logData);
+        setFilteredLogs(logData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching logs:', error);
@@ -91,9 +91,9 @@ const Logs = () => {
     try {
       // Simulate API request
       await new Promise(resolve => setTimeout(resolve, 800));
-      const data = mockData.getLogs();
-      setLogs(data);
-      setFilteredLogs(data);
+      const logData = await mockData.getLogs();
+      setLogs(logData);
+      setFilteredLogs(logData);
       toast({
         title: "Refreshed",
         description: "Log data has been updated.",
