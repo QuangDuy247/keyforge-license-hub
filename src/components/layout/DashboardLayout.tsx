@@ -171,6 +171,7 @@ const DashboardLayout = () => {
               <Button variant="outline" size="icon">
                 <ChevronLeft className="sidebar-open:hidden" />
                 <ChevronRight className="hidden sidebar-open:block" />
+                <span className="sr-only">Toggle Sidebar</span>
               </Button>
             </SidebarTrigger>
             <div className="ml-4 font-medium">
