@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Outlet } from 'react-router-dom';
@@ -167,12 +166,11 @@ const DashboardLayout = () => {
         
         <div className="flex-1 flex flex-col">
           <div className="flex items-center p-4 border-b">
-            <SidebarTrigger>
-              {({ open }) => (
-                <Button variant="outline" size="icon">
-                  {open ? <ChevronLeft /> : <ChevronRight />}
-                </Button>
-              )}
+            <SidebarTrigger asChild>
+              <Button variant="outline" size="icon">
+                <ChevronLeft className="sidebar-open:hidden" />
+                <ChevronRight className="hidden sidebar-open:block" />
+              </Button>
             </SidebarTrigger>
             <div className="ml-4 font-medium">
               {user && (
